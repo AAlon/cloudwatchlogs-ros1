@@ -51,19 +51,25 @@ install(DIRECTORY config launch
 ## Add gtest based cpp test target and link libraries
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  include_directories(/usr/include/gmock /usr/src/gmock)
-  add_library(libgmock /usr/src/gmock/src/gmock-all.cc)
+  find_package(GMock QUIET)
+  if(GMOCK_FOUND)
+      add_rostest_gmock(test_log_node test/log_node_test.cpp)
+      target_include_directories(test_log_node PRIVATE include ${catkin_INCLUDE_DIRS} ${cloudwatch_logger_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS})
+      target_link_libraries(test_log_node ${PROJECT_NAME}_lib ${GMOCK_BOTH_LIBRARIES} ${catkin_LIBRARIES})
 
-  add_executable(test_log_node test/log_node_test.cpp)
-  target_include_directories(test_log_node PRIVATE include ${catkin_INCLUDE_DIRS}
-    ${cloudwatch_logger_INCLUDE_DIRS})
-  target_link_libraries(test_log_node ${PROJECT_NAME}_lib ${GTEST_LIBRARIES} libgmock ${catkin_LIBRARIES})
-  add_test(NAME test_log_node COMMAND test_log_node --gtest_output=xml:test_results/)
+      add_rostest_gmock(test_log_node_param_helper test/log_node_param_helper_test.cpp)
+      target_include_directories(test_log_node_param_helper PRIVATE include ${catkin_INCLUDE_DIRS} ${cloudwatch_logger_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS})
+      target_link_libraries(test_log_node_param_helper ${PROJECT_NAME}_lib ${GMOCK_BOTH_LIBRARIES} ${catkin_LIBRARIES})
+  else()
+      include_directories(/usr/include/gmock /usr/src/gmock)
+      add_library(${PROJECT_NAME}_libgmock /usr/src/gmock/src/gmock-all.cc)
+  
+      add_rostest_gtest(test_log_node test/log_node_test.cpp)
+      target_include_directories(test_log_node PRIVATE include ${catkin_INCLUDE_DIRS} ${cloudwatch_logger_INCLUDE_DIRS})
+      target_link_libraries(test_log_node ${PROJECT_NAME}_lib ${PROJECT_NAME}_libgmock ${catkin_LIBRARIES})
 
-  add_executable(test_log_node_param_helper test/log_node_param_helper_test.cpp)
-  target_include_directories(test_log_node_param_helper PRIVATE include ${catkin_INCLUDE_DIRS}
-    ${cloudwatch_logger_INCLUDE_DIRS})
-  target_link_libraries(test_log_node_param_helper ${PROJECT_NAME}_lib 
-    ${GTEST_LIBRARIES} libgmock ${catkin_LIBRARIES})
-  add_test(NAME test_log_node_param_helper COMMAND test_log_node_param_helper --gtest_output=xml:test_results/)
+      add_rostest_gtest(test_log_node_param_helper test/log_node_param_helper_test.cpp)
+      target_include_directories(test_log_node_param_helper PRIVATE include ${catkin_INCLUDE_DIRS} ${cloudwatch_logger_INCLUDE_DIRS})
+      target_link_libraries(test_log_node_param_helper ${PROJECT_NAME}_lib ${PROJECT_NAME}_libgmock ${catkin_LIBRARIES})
+  endif()
 endif()
